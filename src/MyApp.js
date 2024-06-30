@@ -1,63 +1,131 @@
-import React, { useEffect, useCallback, useState } from "react";
-import RcDropdown from "rc-dropdown";
-import Menu, { Item as MenuItem, Divider } from "rc-menu";
+import React, { useState } from "react";
+import Slider from "rc-slider";
+import Tooltip from "./tooltip";
 
-import "rc-dropdown/assets/index.css";
+import "react-tooltip/dist/react-tooltip.css";
+import "rc-tooltip/assets/bootstrap.css";
+import "rc-slider/assets/index.css";
 import "./App.css";
 
+// const FlexHandle = styled(Handle)`
+//   display: flex;
+//   justify-content: center;
+// `;
+
+// By default the text is rendered inside the handle, so we need to take it out
+// white-space: nowrap; ensures that it doesn't break on a new line, due to the handle being very small
+// const Value = styled.div`
+//   margin: -42px 0 20px;
+//   white-space: nowrap;
+//   color: white;
+//   font-size: 16px;
+//   font-weight: bold;
+//   padding: 5px;
+//   background-color: #4d4d4dd4;
+//   border-radius: 4px;
+//   position: relative;
+
+//   &::after {
+//     content: "";
+//     position: absolute;
+//     bottom: -5px;
+//     left: 50%;
+//     transform: translateX(-50%);
+//     width: 0;
+//     height: 0;
+//     border-top: 5px solid #4d4d4dd4;
+//     border-bottom: 0px solid transparent;
+//     border-right: 5px solid transparent;
+//     border-left: 5px solid transparent;
+//   }
+// `;
+
 function MyApp() {
-  const [frameElement, setFrameElement] = React.useState(null);
-  const [visible, setVisible] = useState(false);
+  const [value, setValue] = useState([0, 100]);
 
-  function onSelect({ key }) {
-    console.log(`${key} selected`);
-  }
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const [focusOpen, setFocusOpen] = useState(false);
 
-  const menu = (
-    <Menu onSelect={onSelect}>
-      <MenuItem key="1">One</MenuItem>
-      <MenuItem key="2">Two</MenuItem>
-      <Divider />
-      <MenuItem key="3">Three</MenuItem>
-    </Menu>
-  );
-
-  useEffect(() => {
-    const handleCloseDropdown = () => {
-      setVisible(false);
+  React.useEffect(() => {
+    const onMouseUp = () => {
+      setFocusOpen(false);
     };
-
-    if (frameElement) {
-      const myFrame = frameElement.contentWindow.document;
-
-      myFrame.addEventListener("click", handleCloseDropdown);
-    }
+    document.addEventListener("mouseup", onMouseUp);
 
     return () => {
-      if (frameElement) {
-        const myFrame = frameElement.contentWindow.document;
-
-        myFrame.removeEventListener("click", handleCloseDropdown);
-      }
+      document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [frameElement]);
-
-  const handleFrameElement = useCallback((e) => {
-    setFrameElement(e.target);
   }, []);
 
   return (
     <div className="App">
-      <RcDropdown visible={visible} trigger="click" overlay={menu} onVisibleChange={setVisible}>
-        <button style={{ width: 100 }}>open</button>
-      </RcDropdown>
-      <iframe
-        id="myFrame"
-        name="frame_name"
-        src="http://localhost:3000/about"
-        title="aaa"
-        onLoad={handleFrameElement}
-        scrolling="no"
+      <p>aaa</p>
+      <p>aaa</p>
+      <p>aaa</p>
+      <Slider
+        step={1}
+        range
+        max={100}
+        min={0}
+        value={value}
+        onChange={setValue}
+        // handle={(props) => {
+        //   console.log('props', props)
+        //   const { value, dragging, index, ...rest } = props;
+
+        //   return (
+        //     <FlexHandle key={index} value={value} {...rest}>
+        //       {dragging && <Value>{value}</Value>}
+        //     </FlexHandle>
+        //   );
+        // }}
+        handleRender={(node, props) => {
+          const nodeProps = node.props;
+
+          const passedProps = {
+            ...nodeProps,
+            onMouseEnter: (e) => {
+              setHoverOpen(true);
+              nodeProps.onMouseEnter?.(e);
+            },
+            onMouseLeave: (e) => {
+              setHoverOpen(false);
+              nodeProps.onMouseLeave?.(e);
+            },
+            onMouseDown: (e) => {
+              setFocusOpen(true);
+              nodeProps.onMouseDown?.(e);
+            },
+            onFocus: (e) => {
+              setFocusOpen(true);
+              nodeProps.onFocus?.(e);
+            },
+            onBlur: (e) => {
+              setFocusOpen(false);
+              nodeProps.onBlur?.(e);
+            },
+          };
+
+          const cloneNode = React.cloneElement(node, passedProps);
+
+          return cloneNode;
+        }}
+        activeHandleRender={(handle, props) => {
+          const cloneNode = React.cloneElement(handle, {
+            style: {
+              ...handle.props.style,
+              visibility: "hidden",
+            },
+          });
+
+          const open = hoverOpen || focusOpen;
+
+          return (
+            <Tooltip {...props} open={open} key="tooltip">
+              {cloneNode}
+            </Tooltip>
+          );
+        }}
       />
     </div>
   );
